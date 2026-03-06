@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no"/>
+  <meta name="theme-color" content="#1a7a4a"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+  <meta name="apple-mobile-web-app-title" content="MiNegocio"/>
+  <title>MiNegocio</title>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+<div id="app">
+
+  <header id="app-header">
+    <button class="header-back" aria-label="Volver">←</button>
+    <div class="header-logo">Mi<span>Negocio</span></div>
+    <span class="header-badge">v2</span>
+  </header>
+
+  <div id="install-banner">
+    <span class="install-text">📱 Instala la app en tu celular</span>
+    <button class="install-btn" id="install-accept">Instalar</button>
+    <button class="install-close" id="install-dismiss">✕</button>
+  </div>
+
+  <main id="main-content">
+
+    <!-- ══════════ HOME ══════════ -->
+    <section id="view-home" class="view active">
+      <div class="home-hero">
+        <div class="hero-greeting">Resumen del negocio</div>
+        <div class="hero-title">Panel de Control 📊</div>
+        <div class="hero-stats">
+          <div class="hero-stat">
+            <div class="hero-stat-label">Ingresos totales</div>
+            <div class="hero-stat-value positive" id="home-ingresos">$0</div>
+          </div>
+          <div class="hero-stat">
+            <div class="hero-stat-label">Utilidad estimada</div>
+            <div class="hero-stat-value positive" id="home-saldo">$0</div>
+          </div>
+        </div>
+      </div>
+      <div class="modules-section">
+        <div class="section-title">Módulos</div>
+        <div class="modules-grid">
+          <div class="module-card ingresos" data-view="ingresos"><span class="module-icon">💰</span><div class="module-name">Ingresos</div><div class="module-count" id="cnt-ingresos">0 ventas</div></div>
+          <div class="module-card compras"  data-view="compras"> <span class="module-icon">🛒</span><div class="module-name">Compras</div> <div class="module-count" id="cnt-compras">0 registros</div></div>
+          <div class="module-card gastos"   data-view="gastos">  <span class="module-icon">💸</span><div class="module-name">Gastos</div>  <div class="module-count" id="cnt-gastos">0 registros</div></div>
+          <div class="module-card inventario" data-view="inventario"><span class="module-icon">📦</span><div class="module-name">Inventario</div><div class="module-count" id="cnt-inventario">0 productos</div></div>
+          <div class="module-card reportes" data-view="reportes" style="grid-column:1/-1;display:flex;align-items:center;gap:16px;text-align:left;padding:18px 20px;">
+            <span class="module-icon" style="font-size:2rem;margin:0">📈</span>
+            <div><div class="module-name" style="font-size:1.05rem">Reportes</div><div class="module-count">Flujo de caja · CxC · CxP · Estado de resultados</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="activity-section">
+        <div class="section-title">Actividad reciente</div>
+        <div class="activity-list" id="activity-list"></div>
+      </div>
+    </section>
+
+    <!-- ══════════ INGRESOS ══════════ -->
+    <section id="view-ingresos" class="view">
+      <div class="view-header">
+        <div class="view-header-title">💰 Ingresos</div>
+        <div class="view-header-sub">Ventas y abonos de clientes</div>
+      </div>
+      <!-- Tabs -->
+      <div class="tab-bar">
+        <button class="tab-btn active" data-group="ing" data-target="ing-tab-ventas">🛍️ Registrar venta</button>
+        <button class="tab-btn" data-group="ing" data-target="ing-tab-abono">💵 Abono cliente</button>
+        <button class="tab-btn" data-group="ing" data-target="ing-tab-historial">📋 Historial</button>
+      </div>
+      <!-- Tab: Venta -->
+      <div id="ing-tab-ventas" class="tab-panel active" data-group="ing">
+        <form id="form-ingresos" class="form-container" novalidate>
+          <div class="form-group"><label for="ing-cliente">Cliente</label><input id="ing-cliente" type="text" placeholder="Nombre del cliente (opcional)" autocomplete="off"/></div>
+          <div class="form-group"><label for="ing-producto">Producto / Servicio</label><input id="ing-producto" type="text" placeholder="Ej: Café volcán, Café finca 454gr..." required autocomplete="off"/></div>
+          <div class="form-group"><label for="ing-cantidad">Cantidad</label><input id="ing-cantidad" type="number" placeholder="1" min="1" step="1" required/></div>
+          <div class="form-group"><label for="ing-precio">Precio unitario ($)</label><input id="ing-precio" type="number" placeholder="0" min="0" step="100" required/></div>
+          <div class="form-group"><label>Forma de pago</label>
+            <div class="payment-options">
+              <button type="button" class="payment-btn" data-val="efectivo"><span class="pay-icon">💵</span>Efectivo</button>
+              <button type="button" class="payment-btn" data-val="transferencia"><span class="pay-icon">🏦</span>Transferencia</button>
+              <button type="button" class="payment-btn" data-val="tarjeta"><span class="pay-icon">💳</span>Tarjeta</button>
+              <button type="button" class="payment-btn" data-val="credito"><span class="pay-icon">📋</span>Crédito</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full">✅ Registrar venta</button>
+          <div class="divider"></div>
+          <button type="button" class="btn btn-voice btn-full" id="voice-btn-ingresos">🎤 Registrar por voz</button>
+          <div class="voice-transcript" id="voice-transcript-ingresos"></div>
+          <p style="font-size:.75rem;color:var(--gray-500);text-align:center;margin-top:-6px;">Ej: <em>"Vendí 3 café volcán a 31460 en efectivo"</em></p>
+        </form>
+      </div>
+      <!-- Tab: Abono -->
+      <div id="ing-tab-abono" class="tab-panel" data-group="ing">
+        <form id="form-abono" class="form-container" novalidate>
+          <div class="tab-info-box">💡 Registra aquí cuando un cliente abona a su deuda por ventas a crédito.</div>
+          <div class="form-group"><label for="abo-cliente">Nombre del cliente</label><input id="abo-cliente" type="text" placeholder="Nombre exacto del cliente" required autocomplete="off"/></div>
+          <div class="form-group"><label for="abo-monto">Monto del abono ($)</label><input id="abo-monto" type="number" placeholder="0" min="0" step="1000" required/></div>
+          <div class="form-group"><label for="abo-nota">Nota (opcional)</label><input id="abo-nota" type="text" placeholder="Ej: Abono cuota 1, pago parcial..." autocomplete="off"/></div>
+          <button type="submit" class="btn btn-primary btn-full">✅ Registrar abono</button>
+        </form>
+        <div class="records-container"><div class="section-title" style="padding:0 0 12px">Abonos recibidos</div><div class="records-list" id="records-abonos"></div></div>
+      </div>
+      <!-- Tab: Historial -->
+      <div id="ing-tab-historial" class="tab-panel" data-group="ing">
+        <div class="periodo-bar">
+          <button class="periodo-btn" data-p="diario">Hoy</button>
+          <button class="periodo-btn" data-p="semanal">Semana</button>
+          <button class="periodo-btn active" data-p="mensual">Mes</button>
+        </div>
+        <div class="records-container"><div class="records-list" id="records-ingresos"></div></div>
+      </div>
+    </section>
+
+    <!-- ══════════ COMPRAS ══════════ -->
+    <section id="view-compras" class="view">
+      <div class="view-header">
+        <div class="view-header-title">🛒 Compras</div>
+        <div class="view-header-sub">Compras y pagos a proveedores</div>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn active" data-group="com" data-target="com-tab-compra">🛒 Registrar compra</button>
+        <button class="tab-btn" data-group="com" data-target="com-tab-pago">🏭 Pago proveedor</button>
+        <button class="tab-btn" data-group="com" data-target="com-tab-historial">📋 Historial</button>
+      </div>
+      <!-- Tab: Compra -->
+      <div id="com-tab-compra" class="tab-panel active" data-group="com">
+        <form id="form-compras" class="form-container" novalidate>
+          <div class="form-group"><label for="com-proveedor">Proveedor</label><input id="com-proveedor" type="text" placeholder="Nombre del proveedor (opcional)" autocomplete="off"/></div>
+          <div class="form-group"><label for="com-producto">Producto</label><input id="com-producto" type="text" placeholder="Ej: Café volcán, Café finca 454gr..." required autocomplete="off"/></div>
+          <div class="form-group"><label for="com-cantidad">Cantidad</label><input id="com-cantidad" type="number" placeholder="1" min="1" step="1" required/></div>
+          <div class="form-group"><label for="com-precio">Precio unitario ($)</label><input id="com-precio" type="number" placeholder="0" min="0" step="100" required/></div>
+          <div class="form-group"><label>Forma de pago</label>
+            <div class="payment-options">
+              <button type="button" class="payment-btn" data-val="efectivo"><span class="pay-icon">💵</span>Efectivo</button>
+              <button type="button" class="payment-btn" data-val="transferencia"><span class="pay-icon">🏦</span>Transferencia</button>
+              <button type="button" class="payment-btn" data-val="tarjeta"><span class="pay-icon">💳</span>Tarjeta</button>
+              <button type="button" class="payment-btn" data-val="credito"><span class="pay-icon">📋</span>Crédito</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" style="background:var(--blue);box-shadow:0 4px 12px rgba(59,130,246,.3)">✅ Registrar compra</button>
+          <div class="divider"></div>
+          <button type="button" class="btn btn-voice btn-full" id="voice-btn-compras">🎤 Registrar por voz</button>
+          <div class="voice-transcript" id="voice-transcript-compras"></div>
+          <p style="font-size:.75rem;color:var(--gray-500);text-align:center;margin-top:-6px;">Ej: <em>"Compré 100 café volcán a 11460 en efectivo"</em></p>
+        </form>
+      </div>
+      <!-- Tab: Pago proveedor -->
+      <div id="com-tab-pago" class="tab-panel" data-group="com">
+        <form id="form-pagoprov" class="form-container" novalidate>
+          <div class="tab-info-box">💡 Registra aquí cuando pagas una deuda con un proveedor por compras a crédito.</div>
+          <div class="form-group"><label for="pp-proveedor">Nombre del proveedor</label><input id="pp-proveedor" type="text" placeholder="Nombre exacto del proveedor" required autocomplete="off"/></div>
+          <div class="form-group"><label for="pp-monto">Monto del pago ($)</label><input id="pp-monto" type="number" placeholder="0" min="0" step="1000" required/></div>
+          <div class="form-group"><label for="pp-nota">Nota (opcional)</label><input id="pp-nota" type="text" placeholder="Ej: Abono factura #123..." autocomplete="off"/></div>
+          <button type="submit" class="btn btn-primary btn-full" style="background:var(--blue);box-shadow:0 4px 12px rgba(59,130,246,.3)">✅ Registrar pago</button>
+        </form>
+        <div class="records-container"><div class="section-title" style="padding:0 0 12px">Pagos a proveedores</div><div class="records-list" id="records-pagosprov"></div></div>
+      </div>
+      <!-- Tab: Historial -->
+      <div id="com-tab-historial" class="tab-panel" data-group="com">
+        <div class="periodo-bar">
+          <button class="periodo-btn" data-p="diario">Hoy</button>
+          <button class="periodo-btn" data-p="semanal">Semana</button>
+          <button class="periodo-btn active" data-p="mensual">Mes</button>
+        </div>
+        <div class="records-container"><div class="records-list" id="records-compras"></div></div>
+      </div>
+    </section>
+
+    <!-- ══════════ GASTOS ══════════ -->
+    <section id="view-gastos" class="view">
+      <div class="view-header">
+        <div class="view-header-title">💸 Gastos</div>
+        <div class="view-header-sub">Gastos operativos y pagos pendientes</div>
+      </div>
+      <div class="tab-bar">
+        <button class="tab-btn active" data-group="gas" data-target="gas-tab-gasto">💸 Registrar gasto</button>
+        <button class="tab-btn" data-group="gas" data-target="gas-tab-pago">✅ Pago de gasto</button>
+        <button class="tab-btn" data-group="gas" data-target="gas-tab-historial">📋 Historial</button>
+      </div>
+      <!-- Tab: Gasto -->
+      <div id="gas-tab-gasto" class="tab-panel active" data-group="gas">
+        <form id="form-gastos" class="form-container" novalidate>
+          <div class="form-group"><label for="gas-descripcion">Descripción del gasto</label><input id="gas-descripcion" type="text" placeholder="Ej: Arriendo, Luz, Internet, Nómina..." required autocomplete="off"/></div>
+          <div class="form-group"><label for="gas-precio">Valor ($)</label><input id="gas-precio" type="number" placeholder="0" min="0" step="100" required/></div>
+          <div class="form-group"><label>Forma de pago</label>
+            <div class="payment-options">
+              <button type="button" class="payment-btn" data-val="efectivo"><span class="pay-icon">💵</span>Efectivo</button>
+              <button type="button" class="payment-btn" data-val="transferencia"><span class="pay-icon">🏦</span>Transferencia</button>
+              <button type="button" class="payment-btn" data-val="tarjeta"><span class="pay-icon">💳</span>Tarjeta</button>
+              <button type="button" class="payment-btn" data-val="credito"><span class="pay-icon">📋</span>Crédito</button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-full" style="background:var(--danger);color:#fff;box-shadow:0 4px 12px rgba(239,68,68,.25);font-family:var(--font-head);font-weight:800;font-size:1rem;border-radius:var(--radius-sm);padding:15px 20px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">✅ Registrar gasto</button>
+          <div class="divider"></div>
+          <button type="button" class="btn btn-voice btn-full" id="voice-btn-gastos">🎤 Registrar por voz</button>
+          <div class="voice-transcript" id="voice-transcript-gastos"></div>
+          <p style="font-size:.75rem;color:var(--gray-500);text-align:center;margin-top:-6px;">Ej: <em>"Pagué arriendo por 2000000 en transferencia"</em></p>
+        </form>
+      </div>
+      <!-- Tab: Pago gasto -->
+      <div id="gas-tab-pago" class="tab-panel" data-group="gas">
+        <form id="form-pagogasto" class="form-container" novalidate>
+          <div class="tab-info-box">💡 Registra aquí cuando pagas un gasto que habías registrado a crédito (ej: arriendo pendiente).</div>
+          <div class="form-group"><label for="pg-descripcion">Descripción del gasto</label><input id="pg-descripcion" type="text" placeholder="Nombre exacto del gasto a pagar" required autocomplete="off"/></div>
+          <div class="form-group"><label for="pg-monto">Monto del pago ($)</label><input id="pg-monto" type="number" placeholder="0" min="0" step="1000" required/></div>
+          <div class="form-group"><label for="pg-nota">Nota (opcional)</label><input id="pg-nota" type="text" placeholder="Ej: Primera cuota, pago total..." autocomplete="off"/></div>
+          <button type="submit" class="btn btn-full" style="background:var(--danger);color:#fff;box-shadow:0 4px 12px rgba(239,68,68,.25);font-family:var(--font-head);font-weight:800;font-size:1rem;border-radius:var(--radius-sm);padding:15px 20px;border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;">✅ Registrar pago</button>
+        </form>
+        <div class="records-container"><div class="section-title" style="padding:0 0 12px">Pagos de gastos</div><div class="records-list" id="records-pagosgasto"></div></div>
+      </div>
+      <!-- Tab: Historial -->
+      <div id="gas-tab-historial" class="tab-panel" data-group="gas">
+        <div class="periodo-bar">
+          <button class="periodo-btn" data-p="diario">Hoy</button>
+          <button class="periodo-btn" data-p="semanal">Semana</button>
+          <button class="periodo-btn active" data-p="mensual">Mes</button>
+        </div>
+        <div class="records-container"><div class="records-list" id="records-gastos"></div></div>
+      </div>
+    </section>
+
+    <!-- ══════════ INVENTARIO ══════════ -->
+    <section id="view-inventario" class="view">
+      <div class="view-header">
+        <div class="view-header-title">📦 Inventario</div>
+        <div class="view-header-sub">Stock actualizado en tiempo real</div>
+      </div>
+      <div class="inv-container">
+        <div class="alert-banner" id="inv-alert" style="display:none;margin:0 0 12px"></div>
+        <div class="inv-search"><input id="inv-search" type="search" placeholder="🔍 Buscar producto..."/></div>
+        <div class="inv-table-wrap">
+          <table>
+            <thead><tr><th>Producto</th><th>Stock</th><th></th></tr></thead>
+            <tbody id="inv-tbody"><tr><td colspan="3" style="text-align:center;padding:24px;color:var(--gray-400)">No hay productos</td></tr></tbody>
+          </table>
+        </div>
+        <p style="font-size:.75rem;color:var(--gray-500);margin-top:12px;text-align:center;">🟢 OK &nbsp;|&nbsp; 🟡 Bajo (&lt;10) &nbsp;|&nbsp; 🔴 Sin stock</p>
+      </div>
+    </section>
+
+    <!-- ══════════ REPORTES ══════════ -->
+    <section id="view-reportes" class="view">
+      <div class="view-header">
+        <div class="view-header-title">📈 Reportes</div>
+        <div class="view-header-sub">Informes financieros del negocio</div>
+      </div>
+
+      <!-- Filtro de período GLOBAL -->
+      <div style="padding:16px 20px 0;">
+        <div class="section-title" style="margin-bottom:10px">Período del reporte</div>
+        <div class="periodo-bar">
+          <button class="periodo-btn" data-p="diario">Hoy</button>
+          <button class="periodo-btn" data-p="semanal">Esta semana</button>
+          <button class="periodo-btn active" data-p="mensual">Este mes</button>
+        </div>
+      </div>
+
+      <div class="reports-container">
+
+        <!-- FLUJO DE CAJA -->
+        <div class="report-card">
+          <div class="report-card-title">💵 Flujo de Caja <span style="font-size:.7rem;font-weight:500;color:var(--gray-400)">(efectivo + transferencia)</span></div>
+          <div class="cashflow-row">
+            <span class="cashflow-label"><span class="dot" style="background:var(--green-500)"></span>+ Ingresos cobrados</span>
+            <span class="cashflow-value pos" id="fc-ing">$0</span>
+          </div>
+          <div class="cashflow-row">
+            <span class="cashflow-label"><span class="dot" style="background:var(--blue)"></span>− Compras pagadas</span>
+            <span class="cashflow-value neg" id="fc-com">$0</span>
+          </div>
+          <div class="cashflow-row">
+            <span class="cashflow-label"><span class="dot" style="background:var(--danger)"></span>− Gastos pagados</span>
+            <span class="cashflow-value neg" id="fc-gas">$0</span>
+          </div>
+          <div class="cashflow-row total-row">
+            <span class="cashflow-label" style="font-weight:700;color:var(--gray-900)">= Total en Caja</span>
+            <span class="cashflow-value total pos" id="fc-total">$0</span>
+          </div>
+        </div>
+
+        <!-- ESTADO DE RESULTADOS -->
+        <div class="report-card">
+          <div class="report-card-title">📊 Estado de Resultados <span style="font-size:.7rem;font-weight:500;color:var(--gray-400)">(contado + crédito)</span></div>
+          <div class="cashflow-row">
+            <span class="cashflow-label"><span class="dot" style="background:var(--green-500)"></span>+ Total Ingresos</span>
+            <span class="cashflow-value pos" id="er-ing">$0</span>
+          </div>
+          <div class="cashflow-row">
+            <span class="cashflow-label"><span class="dot" style="background:var(--blue)"></span>− Total Costo</span>
+            <span class="cashflow-value neg" id="er-costo">$0</span>
+          </div>
+          <div class="cashflow-row">
+            <span class="cashflow-label"><span class="dot" style="background:var(--danger)"></span>− Total Gastos</span>
+            <span class="cashflow-value neg" id="er-gastos">$0</span>
+          </div>
+          <div class="cashflow-row total-row">
+            <span class="cashflow-label" style="font-weight:700;color:var(--gray-900)" id="er-label">= Utilidad del período</span>
+            <span class="cashflow-value total pos" id="er-utilidad">$0</span>
+          </div>
+        </div>
+
+        <!-- GRÁFICO BARRAS -->
+        <div class="report-card">
+          <div class="report-card-title">📉 Comparativo visual</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar-row"><span class="chart-bar-label">Ingresos</span><div class="chart-bar-track"><div class="chart-bar-fill ing" id="bar-ingresos" style="width:0%"><span id="bar-ing-label"></span></div></div></div>
+            <div class="chart-bar-row"><span class="chart-bar-label">Compras</span><div class="chart-bar-track"><div class="chart-bar-fill com" id="bar-compras"  style="width:0%"><span id="bar-com-label"></span></div></div></div>
+            <div class="chart-bar-row"><span class="chart-bar-label">Gastos</span><div class="chart-bar-track"><div class="chart-bar-fill gas" id="bar-gastos"   style="width:0%"><span id="bar-gas-label"></span></div></div></div>
+          </div>
+        </div>
+
+        <!-- CUENTAS POR COBRAR -->
+        <div class="report-card">
+          <div class="report-card-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>👤 Cuentas por Cobrar</span>
+            <span class="cashflow-value pos" id="cxc-total" style="font-size:1rem">$0</span>
+          </div>
+          <p style="font-size:.75rem;color:var(--gray-500);margin-bottom:10px">Saldos pendientes de clientes (ventas a crédito menos abonos)</p>
+          <div id="cxc-list"></div>
+        </div>
+
+        <!-- CUENTAS POR PAGAR -->
+        <div class="report-card">
+          <div class="report-card-title" style="display:flex;justify-content:space-between;align-items:center">
+            <span>🏭 Cuentas por Pagar</span>
+            <span class="cashflow-value neg" id="cxp-total" style="font-size:1rem">$0</span>
+          </div>
+          <p style="font-size:.75rem;color:var(--gray-500);margin-bottom:10px">Deudas con proveedores y gastos pendientes de pago</p>
+          <div id="cxp-list"></div>
+        </div>
+
+        <!-- Reset -->
+        <div style="text-align:center;padding:4px 0 8px;">
+          <button onclick="resetSeedData()" style="background:none;border:1px solid var(--gray-300);border-radius:8px;padding:8px 18px;font-size:.78rem;color:var(--gray-500);cursor:pointer;">🔄 Restablecer datos de prueba</button>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <nav id="bottom-nav" aria-label="Navegación">
+    <button class="nav-item active" data-nav="home"><span class="nav-icon">🏠</span><span class="nav-label">Inicio</span></button>
+    <button class="nav-item" data-nav="ingresos"><span class="nav-icon">💰</span><span class="nav-label">Ingresos</span></button>
+    <button class="nav-item" data-nav="compras"><span class="nav-icon">🛒</span><span class="nav-label">Compras</span></button>
+    <button class="nav-item" data-nav="gastos"><span class="nav-icon">💸</span><span class="nav-label">Gastos</span></button>
+    <button class="nav-item" data-nav="reportes"><span class="nav-icon">📈</span><span class="nav-label">Reportes</span></button>
+  </nav>
+
+</div>
+<div id="toast-container" aria-live="polite"></div>
+<script src="app.js"></script>
+</body>
+</html>
