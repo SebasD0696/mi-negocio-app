@@ -234,16 +234,35 @@
         <div class="view-header-title">📦 Inventario</div>
         <div class="view-header-sub">Stock actualizado en tiempo real</div>
       </div>
-      <div class="inv-container">
-        <div class="alert-banner" id="inv-alert" style="display:none;margin:0 0 12px"></div>
-        <div class="inv-search"><input id="inv-search" type="search" placeholder="🔍 Buscar producto..."/></div>
-        <div class="inv-table-wrap">
-          <table>
-            <thead><tr><th>Producto</th><th>Stock</th><th></th></tr></thead>
-            <tbody id="inv-tbody"><tr><td colspan="3" style="text-align:center;padding:24px;color:var(--gray-400)">No hay productos</td></tr></tbody>
-          </table>
+      <div class="tab-bar">
+        <button class="tab-btn active" data-group="inv" data-target="inv-tab-agregar">📦 Agregar producto</button>
+        <button class="tab-btn" data-group="inv" data-target="inv-tab-stock">📋 Ver stock</button>
+      </div>
+      <!-- Tab: Agregar producto -->
+      <div id="inv-tab-agregar" class="tab-panel active" data-group="inv">
+        <form id="form-inventario" class="form-container" novalidate>
+          <div class="form-group"><label for="inv-producto">Producto</label><input id="inv-producto" type="text" placeholder="Ej: Café volcán 250gr, Café finca 454gr..." required autocomplete="off"/></div>
+          <div class="form-group"><label for="inv-cantidad">Cantidad a agregar</label><input id="inv-cantidad" type="number" placeholder="1" min="1" step="1" required/></div>
+          <button type="submit" class="btn btn-primary btn-full" style="background:var(--accent);box-shadow:0 4px 12px rgba(26,122,74,.3)">✅ Agregar al inventario</button>
+          <div class="divider"></div>
+          <button type="button" class="btn btn-voice btn-full" id="voice-btn-inventario">🎤 Registrar por voz</button>
+          <div class="voice-transcript" id="voice-transcript-inventario"></div>
+          <p style="font-size:.75rem;color:var(--gray-500);text-align:center;margin-top:-6px;">Ej: <em>"Agregué 50 café volcán al inventario"</em></p>
+        </form>
+      </div>
+      <!-- Tab: Ver stock -->
+      <div id="inv-tab-stock" class="tab-panel" data-group="inv">
+        <div class="inv-container">
+          <div class="alert-banner" id="inv-alert" style="display:none;margin:0 0 12px"></div>
+          <div class="inv-search"><input id="inv-search" type="search" placeholder="🔍 Buscar producto..."/></div>
+          <div class="inv-table-wrap">
+            <table>
+              <thead><tr><th>Producto</th><th>Stock</th><th></th></tr></thead>
+              <tbody id="inv-tbody"><tr><td colspan="3" style="text-align:center;padding:24px;color:var(--gray-400)">No hay productos</td></tr></tbody>
+            </table>
+          </div>
+          <p style="font-size:.75rem;color:var(--gray-500);margin-top:12px;text-align:center;">🟢 OK &nbsp;|&nbsp; 🟡 Bajo (&lt;10) &nbsp;|&nbsp; 🔴 Sin stock</p>
         </div>
-        <p style="font-size:.75rem;color:var(--gray-500);margin-top:12px;text-align:center;">🟢 OK &nbsp;|&nbsp; 🟡 Bajo (&lt;10) &nbsp;|&nbsp; 🔴 Sin stock</p>
       </div>
     </section>
 

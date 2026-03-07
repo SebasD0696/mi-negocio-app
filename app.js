@@ -255,6 +255,16 @@ function renderRecords(tipo, periodo) {
 }
 
 // ─── INVENTARIO ───────────────────────────────────────────────
+function registrarInventario(e) {
+  e.preventDefault();
+  const producto =document.getElementById('inv-producto').value.trim();
+  const cantidad =parseInt(document.getElementById('inv-cantidad').value);
+  if(!producto||!cantidad||cantidad<1){toast('Completa producto y cantidad','error','⚠️');return;}
+  updateInventario(producto, cantidad);
+  toast(`Inventario actualizado: ${producto}`,'success','✅');
+  e.target.reset(); renderInventario(); renderHome();
+}
+
 function renderInventario(filter='') {
   const inv=getInventario();
   const alert=document.getElementById('inv-alert');
@@ -381,6 +391,7 @@ const VOICE_CONFIG={
   ingresos:{btnId:'voice-btn-ingresos',transcriptId:'voice-transcript-ingresos',formId:'form-ingresos',campoProducto:'ing-producto',campoCantidad:'ing-cantidad',campoPrecio:'ing-precio',ejemplos:['"Vendí 3 café volcán a 31460 en efectivo"']},
   compras: {btnId:'voice-btn-compras', transcriptId:'voice-transcript-compras', formId:'form-compras', campoProducto:'com-producto',campoCantidad:'com-cantidad',campoPrecio:'com-precio', ejemplos:['"Compré 100 café volcán a 11460 en efectivo"']},
   gastos:  {btnId:'voice-btn-gastos',  transcriptId:'voice-transcript-gastos',  formId:'form-gastos',  campoProducto:'gas-descripcion',campoCantidad:null,        campoPrecio:'gas-precio', ejemplos:['"Pagué arriendo por 2000000 en transferencia"']},
+  inventario: {btnId:'voice-btn-inventario', transcriptId:'voice-transcript-inventario', formId:'form-inventario', campoProducto:'inv-producto',   campoCantidad:'inv-cantidad', campoPrecio:null, ejemplos:['\"Agregué 50 café volcán al inventario\"']},
 };
 function initVoice() {
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
@@ -461,6 +472,7 @@ document.addEventListener('DOMContentLoaded',()=>{
   document.getElementById('form-pagoprov').addEventListener('submit',registrarPagoProveedor);
   document.getElementById('form-gastos').addEventListener('submit',registrarGasto);
   document.getElementById('form-pagogasto').addEventListener('submit',registrarPagoGasto);
+  document.getElementById('form-inventario').addEventListener('submit',registrarInventario);
 
   document.querySelectorAll('.nav-item').forEach(i=>i.addEventListener('click',()=>navigate(i.dataset.nav)));
   document.querySelectorAll('.module-card').forEach(c=>c.addEventListener('click',()=>navigate(c.dataset.view)));
