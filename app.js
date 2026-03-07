@@ -1,5 +1,5 @@
 /* ============================================================
-   MiNegocio PWA v2 — Lógica principal
+   KeepInventory PWA v3 — Lógica principal
    ============================================================ */
 'use strict';
 
@@ -17,6 +17,9 @@ const KEYS = {
   gastos:'mn_gastos',     pagosgasto:'mn_pagosgasto',
   inventario:'mn_inventario',
 };
+
+// Estado de filtros por sección (independiente del reporte global)
+const FILTROS = { ingresos:'mensual', compras:'mensual', gastos:'mensual' };
 
 const SEED_DATA = {
   ingresos:[
@@ -63,9 +66,9 @@ const SEED_DATA = {
 };
 
 function loadSeedData() {
-  if (localStorage.getItem('mn_seeded')==='3') return;
+  if (localStorage.getItem('mn_seeded')==='4') return;
   Object.entries(KEYS).forEach(([k,key]) => { if(SEED_DATA[k]) DB.set(key,SEED_DATA[k]); });
-  localStorage.setItem('mn_seeded','3');
+  localStorage.setItem('mn_seeded','4');
 }
 
 // ─── Utilidades ───────────────────────────────────────────────
@@ -75,11 +78,19 @@ const fmtDate = iso => new Date(iso).toLocaleDateString('es-CO',{day:'2-digit',m
 function filtrarPorPeriodo(lista, periodo) {
   const now = new Date();
   let desde;
-  if (periodo==='diario')  { desde=new Date(now); desde.setHours(0,0,0,0); }
-  if (periodo==='semanal') { desde=new Date(now); desde.setDate(desde.getDate()-desde.getDay()); desde.setHours(0,0,0,0); }
-  if (periodo==='mensual') { desde=new Date(now.getFullYear(),now.getMonth(),1); }
+  if (periodo==='diario') {
+    desde = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  }
+  if (periodo==='semanal') {
+    const day = now.getDay(); // 0=dom, 1=lun ...
+    const diff = now.getDate() - day + (day===0 ? -6 : 1); // lunes como inicio
+    desde = new Date(now.getFullYear(), now.getMonth(), diff, 0, 0, 0, 0);
+  }
+  if (periodo==='mensual') {
+    desde = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+  }
   if (!desde) return lista;
-  return lista.filter(r=>new Date(r.fecha)>=desde);
+  return lista.filter(r => new Date(r.fecha) >= desde);
 }
 
 function toast(msg,type='success',icon='') {
@@ -103,9 +114,18 @@ function navigate(viewId) {
   if(viewId==='home')       renderHome();
   if(viewId==='inventario') renderInventario();
   if(viewId==='reportes')   renderReportes();
-  if(viewId==='ingresos')   { renderRecords('ingresos'); renderAbonos(); }
-  if(viewId==='compras')    { renderRecords('compras');  renderPagosProveedores(); }
-  if(viewId==='gastos')     { renderRecords('gastos');   renderPagosGastos(); }
+  if(viewId==='ingresos')   { renderRecords('ingresos', FILTROS.ingresos); renderAbonos(); syncPeriodoBtns('ingresos'); }
+  if(viewId==='compras')    { renderRecords('compras', FILTROS.compras);   renderPagosProveedores(); syncPeriodoBtns('compras'); }
+  if(viewId==='gastos')     { renderRecords('gastos', FILTROS.gastos);     renderPagosGastos(); syncPeriodoBtns('gastos'); }
+}
+
+// Sincroniza los botones periodo-btn del historial al estado FILTROS
+function syncPeriodoBtns(tipo) {
+  const seccion = document.getElementById(`view-${tipo}`);
+  if (!seccion) return;
+  seccion.querySelectorAll('.historial-periodo-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.p === FILTROS[tipo]);
+  });
 }
 
 // ─── Inventario ───────────────────────────────────────────────
@@ -151,10 +171,22 @@ function registrarIngreso(e) {
   const pago    =document.querySelector('#form-ingresos .payment-btn.selected')?.dataset.val||'efectivo';
   const cliente =document.getElementById('ing-cliente').value.trim()||'Cliente general';
   if(!producto||!cantidad||!precio){toast('Completa todos los campos','error','⚠️');return;}
+
+  // Validar stock disponible
+  const inv = getInventario();
+  const nom  = producto.trim().toLowerCase();
+  const item = inv.find(i => i.producto.toLowerCase() === nom);
+  if(!item){
+    toast(`"${producto}" no existe en inventario. Agrégalo primero.`,'error','📦');return;
+  }
+  if(item.cantidad < cantidad){
+    toast(`Stock insuficiente: solo hay ${item.cantidad} und de "${item.producto}"`,'error','📦');return;
+  }
+
   DB.push(KEYS.ingresos,{id:Date.now(),producto,cantidad,precio,pago,cliente,fecha:new Date().toISOString()});
   updateInventario(producto,-cantidad);
   toast(`Venta registrada: ${producto}`,'success','✅');
-  e.target.reset(); resetPaymentBtns('form-ingresos'); renderRecords('ingresos'); renderHome();
+  e.target.reset(); resetPaymentBtns('form-ingresos'); renderRecords('ingresos', FILTROS.ingresos); renderHome();
 }
 
 function registrarAbono(e) {
@@ -185,9 +217,9 @@ function registrarCompra(e) {
   const proveedor=document.getElementById('com-proveedor').value.trim()||'Proveedor general';
   if(!producto||!cantidad||!precio){toast('Completa todos los campos','error','⚠️');return;}
   DB.push(KEYS.compras,{id:Date.now(),producto,cantidad,precio,pago,proveedor,fecha:new Date().toISOString()});
-  updateInventario(producto,cantidad);
+  updateInventario(producto,+cantidad);
   toast(`Compra registrada: ${producto}`,'success','✅');
-  e.target.reset(); resetPaymentBtns('form-compras'); renderRecords('compras'); renderHome();
+  e.target.reset(); resetPaymentBtns('form-compras'); renderRecords('compras', FILTROS.compras); renderHome();
 }
 
 function registrarPagoProveedor(e) {
@@ -217,7 +249,7 @@ function registrarGasto(e) {
   if(!descripcion||!precio){toast('Completa todos los campos','error','⚠️');return;}
   DB.push(KEYS.gastos,{id:Date.now(),descripcion,precio,pago,fecha:new Date().toISOString()});
   toast(`Gasto registrado: ${descripcion}`,'success','✅');
-  e.target.reset(); resetPaymentBtns('form-gastos'); renderRecords('gastos'); renderHome();
+  e.target.reset(); resetPaymentBtns('form-gastos'); renderRecords('gastos', FILTROS.gastos); renderHome();
 }
 
 function registrarPagoGasto(e) {
@@ -298,7 +330,6 @@ function renderReportes() {
   const totCom=compras.reduce((s,r) =>s+r.precio*r.cantidad,0);
   const totGas=gastos.reduce((s,r)  =>s+r.precio,0);
 
-  // Flujo de caja — solo efectivo + transferencia (dinero ya recibido/pagado)
   const ingEfec=ingresos.filter(r=>r.pago==='efectivo'||r.pago==='transferencia').reduce((s,r)=>s+r.precio*r.cantidad,0);
   const comEfec=compras.filter(r =>r.pago==='efectivo'||r.pago==='transferencia').reduce((s,r)=>s+r.precio*r.cantidad,0);
   const gasEfec=gastos.filter(r  =>r.pago==='efectivo'||r.pago==='transferencia').reduce((s,r)=>s+r.precio,0);
@@ -310,7 +341,6 @@ function renderReportes() {
   document.getElementById('fc-total').textContent=fmt(caja);
   document.getElementById('fc-total').className  ='cashflow-value total '+(caja>=0?'pos':'neg');
 
-  // Estado de resultados
   const util=totIng-totCom-totGas;
   document.getElementById('er-ing').textContent    =fmt(totIng);
   document.getElementById('er-costo').textContent  =fmt(totCom);
@@ -319,7 +349,6 @@ function renderReportes() {
   document.getElementById('er-utilidad').className ='cashflow-value total '+(util>=0?'pos':'neg');
   document.getElementById('er-label').textContent  =util>=0?'= Utilidad del período':'= Pérdida del período';
 
-  // Barras
   const max=Math.max(totIng,totCom,totGas,1);
   document.getElementById('bar-ingresos').style.width=`${(totIng/max*100).toFixed(1)}%`;
   document.getElementById('bar-compras').style.width =`${(totCom/max*100).toFixed(1)}%`;
@@ -373,6 +402,16 @@ function setPeriodo(p) {
   renderReportes();
 }
 
+// ─── Periodo historial por sección ───────────────────────────
+function setHistorialPeriodo(tipo, p) {
+  FILTROS[tipo] = p;
+  const seccion = document.getElementById(`view-${tipo}`);
+  if(seccion) {
+    seccion.querySelectorAll('.historial-periodo-btn').forEach(b=>b.classList.toggle('active', b.dataset.p===p));
+  }
+  renderRecords(tipo, p);
+}
+
 // ─── Payment buttons ──────────────────────────────────────────
 function initPaymentBtns() {
   document.querySelectorAll('.payment-btn').forEach(btn=>{
@@ -386,13 +425,17 @@ function resetPaymentBtns(formId) {
   f.querySelector('.payment-btn')?.classList.add('selected');
 }
 
-// ─── Voice ────────────────────────────────────────────────────
+// ─── Voice (ingresos, compras, gastos, inventario, abonos, pagosprov, pagosgasto) ──
 const VOICE_CONFIG={
-  ingresos:{btnId:'voice-btn-ingresos',transcriptId:'voice-transcript-ingresos',formId:'form-ingresos',campoProducto:'ing-producto',campoCantidad:'ing-cantidad',campoPrecio:'ing-precio',ejemplos:['"Vendí 3 café volcán a 31460 en efectivo"']},
-  compras: {btnId:'voice-btn-compras', transcriptId:'voice-transcript-compras', formId:'form-compras', campoProducto:'com-producto',campoCantidad:'com-cantidad',campoPrecio:'com-precio', ejemplos:['"Compré 100 café volcán a 11460 en efectivo"']},
-  gastos:  {btnId:'voice-btn-gastos',  transcriptId:'voice-transcript-gastos',  formId:'form-gastos',  campoProducto:'gas-descripcion',campoCantidad:null,        campoPrecio:'gas-precio', ejemplos:['"Pagué arriendo por 2000000 en transferencia"']},
-  inventario: {btnId:'voice-btn-inventario', transcriptId:'voice-transcript-inventario', formId:'form-inventario', campoProducto:'inv-producto',   campoCantidad:'inv-cantidad', campoPrecio:null, ejemplos:['\"Agregué 50 café volcán al inventario\"']},
+  ingresos:{btnId:'voice-btn-ingresos',transcriptId:'voice-transcript-ingresos',formId:'form-ingresos',campoProducto:'ing-producto',campoCantidad:'ing-cantidad',campoPrecio:'ing-precio',ejemplos:['\"Vendí 3 café volcán a 31460 en efectivo\"']},
+  compras: {btnId:'voice-btn-compras', transcriptId:'voice-transcript-compras', formId:'form-compras', campoProducto:'com-producto',campoCantidad:'com-cantidad',campoPrecio:'com-precio', ejemplos:['\"Compré 100 café volcán a 11460 en efectivo\"']},
+  gastos:  {btnId:'voice-btn-gastos',  transcriptId:'voice-transcript-gastos',  formId:'form-gastos',  campoProducto:'gas-descripcion',campoCantidad:null,        campoPrecio:'gas-precio', ejemplos:['\"Pagué arriendo por 2000000 en transferencia\"']},
+  inventario:{btnId:'voice-btn-inventario',transcriptId:'voice-transcript-inventario',formId:'form-inventario',campoProducto:'inv-producto',campoCantidad:'inv-cantidad',campoPrecio:null,ejemplos:['"Agregué 50 café volcán al inventario"']},
+  abono:   {btnId:'voice-btn-abono',   transcriptId:'voice-transcript-abono',   formId:'form-abono',   campoProducto:'abo-cliente',    campoCantidad:null,        campoPrecio:'abo-monto',  ejemplos:['\"Abono de Tienda La Esquina por 500000\"'], esAbono:true},
+  pagoprov:{btnId:'voice-btn-pagoprov',transcriptId:'voice-transcript-pagoprov',formId:'form-pagoprov',campoProducto:'pp-proveedor',   campoCantidad:null,        campoPrecio:'pp-monto',   ejemplos:['\"Pago a Caficultor Nariño por 2000000\"'], esPago:true},
+  pagogasto:{btnId:'voice-btn-pagogasto',transcriptId:'voice-transcript-pagogasto',formId:'form-pagogasto',campoProducto:'pg-descripcion',campoCantidad:null,      campoPrecio:'pg-monto',   ejemplos:['\"Pago de arriendo por 1000000\"'], esPago:true},
 };
+
 function initVoice() {
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
   if(!SR){document.querySelectorAll('.btn-voice').forEach(b=>{b.style.opacity='.4';b.disabled=true;});return;}
@@ -414,6 +457,7 @@ function initVoice() {
     function stop(){on=false;btn.classList.remove('listening');btn.innerHTML='🎤 Registrar por voz';setTimeout(()=>tra.classList.remove('visible'),4000);}
   });
 }
+
 function parseVoiceCommand(text,cfg) {
   const nw={'cero':0,'un':1,'uno':1,'una':1,'dos':2,'tres':3,'cuatro':4,'cinco':5,'seis':6,'siete':7,'ocho':8,'nueve':9,'diez':10,'veinte':20,'treinta':30,'cuarenta':40,'cincuenta':50,'sesenta':60,'setenta':70,'ochenta':80,'noventa':90,'cien':100,'ciento':100,'mil':1000,'millón':1000000,'millon':1000000};
   let norm=text; Object.entries(nw).forEach(([w,n])=>{norm=norm.replace(new RegExp(`\\b${w}\\b`,'gi'),n);});
@@ -425,7 +469,7 @@ function parseVoiceCommand(text,cfg) {
   else if(nums.length===1){nums[0]>500?precio=nums[0]:cantidad=nums[0];}
   else{const s=[...nums].sort((a,b)=>a-b);cantidad=s[0];precio=s[s.length-1];}
   let nombre=norm
-    .replace(/\b(vend[ií]|vendimos|compr[eé]|compramos|pagu[eé]|gast[eé])\b/gi,'')
+    .replace(/\b(vend[ií]|vendimos|compr[eé]|compramos|pagu[eé]|gast[eé]|abono de|abono|pago a|pago de)\b/gi,'')
     .replace(new RegExp(`\\b${pk||'XXXXX'}\\b`,'gi'),'')
     .replace(/\b(efectivo|contado|crédito|credito|fiado|transferencia|nequi|daviplata|bancolombia|tarjeta)\b/gi,'')
     .replace(/\b\d+(?:[.,]\d+)?\b/g,'')
@@ -435,8 +479,10 @@ function parseVoiceCommand(text,cfg) {
   document.getElementById(cfg.campoProducto).value=capitalize(nombre);
   if(cfg.campoCantidad) document.getElementById(cfg.campoCantidad).value=cantidad;
   if(cfg.campoPrecio&&precio>0) document.getElementById(cfg.campoPrecio).value=precio;
-  document.querySelectorAll(`#${cfg.formId} .payment-btn`).forEach(b=>b.classList.toggle('selected',b.dataset.val===pago));
-  const res=cfg.campoCantidad?`${capitalize(nombre)} · ${cantidad} und · $${precio.toLocaleString('es-CO')} · ${pago}`:`${capitalize(nombre)} · $${precio.toLocaleString('es-CO')} · ${pago}`;
+  if(!cfg.esAbono&&!cfg.esPago) {
+    document.querySelectorAll(`#${cfg.formId} .payment-btn`).forEach(b=>b.classList.toggle('selected',b.dataset.val===pago));
+  }
+  const res=cfg.campoCantidad?`${capitalize(nombre)} · ${cantidad} und · $${precio.toLocaleString('es-CO')} · ${pago}`:`${capitalize(nombre)} · $${precio.toLocaleString('es-CO')}`;
   toast(res,'success','🎤');
 }
 function capitalize(s){return s.charAt(0).toUpperCase()+s.slice(1);}
@@ -488,7 +534,18 @@ document.addEventListener('DOMContentLoaded',()=>{
     });
   });
 
+  // Botones periodo del reporte global
   document.querySelectorAll('.periodo-btn').forEach(b=>b.addEventListener('click',()=>setPeriodo(b.dataset.p)));
+
+  // Botones periodo del historial por sección (clase historial-periodo-btn)
+  document.querySelectorAll('.historial-periodo-btn').forEach(b=>{
+    b.addEventListener('click',()=>{
+      const tipo = b.dataset.tipo;
+      const p    = b.dataset.p;
+      setHistorialPeriodo(tipo, p);
+    });
+  });
+
   document.getElementById('inv-search').addEventListener('input',e=>renderInventario(e.target.value));
 
   initPaymentBtns(); initVoice(); initPWA(); loadSeedData(); renderHome();

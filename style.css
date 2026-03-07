@@ -27,6 +27,8 @@
   --danger-light: #fef2f2;
   --warning: #f59e0b;
   --warning-light: #fffbeb;
+  --yellow: #f5c518;
+  --yellow-dark: #d4a800;
   --blue: #3b82f6;
   --blue-light: #eff6ff;
 
@@ -445,6 +447,14 @@ input:focus, select:focus {
   color: var(--white);
   box-shadow: 0 4px 12px rgba(239,68,68,.25);
 }
+
+.btn-yellow {
+  background: var(--yellow);
+  color: #5a3e00;
+  box-shadow: 0 4px 14px rgba(245,197,24,.45);
+  font-weight: 800;
+}
+.btn-yellow:hover { background: var(--yellow-dark); color: #fff; }
 
 .btn-voice {
   background: var(--gray-900);
@@ -921,6 +931,26 @@ tbody td:first-child { font-weight: 600; color: var(--gray-900); }
   -webkit-tap-highlight-color: transparent;
 }
 .periodo-btn.active {
+  background: var(--green-700);
+  border-color: var(--green-700);
+  color: var(--white);
+}
+/* Botones periodo en historial de cada sección */
+.historial-periodo-btn {
+  flex: 1;
+  padding: 9px 8px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--gray-200, #e5e7eb);
+  background: var(--white);
+  font-size: .8rem;
+  font-weight: 700;
+  font-family: var(--font-head);
+  color: var(--gray-500);
+  cursor: pointer;
+  transition: all .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.historial-periodo-btn.active {
   background: var(--green-700);
   border-color: var(--green-700);
   color: var(--white);

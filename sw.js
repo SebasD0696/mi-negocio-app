@@ -1,8 +1,8 @@
 /* ============================================================
-   MiNegocio — Service Worker (Cache estratégico)
+   KeepInventory — Service Worker v3
    ============================================================ */
 
-const CACHE_NAME = 'minegocio-' + Date.now(); // siempre único, pero invalida caché en cada recarga
+const CACHE_NAME = 'keepinventory-v3';
 const ASSETS = [
   './',
   './index.html',
