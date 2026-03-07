@@ -2,7 +2,7 @@
    MiNegocio — Service Worker (Cache estratégico)
    ============================================================ */
 
-const CACHE_NAME = 'minegocio-v1';
+const CACHE_NAME = 'minegocio-' + Date.now(); // siempre único, pero invalida caché en cada recarga
 const ASSETS = [
   './',
   './index.html',
